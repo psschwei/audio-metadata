@@ -1,28 +1,27 @@
 # Audio Metadata Tool
 
-A command-line tool for managing audio file metadata, supporting both MP3 and FLAC files. This tool uses `ffmpeg` for cover art operations and `metaflac`/`id3v2` for metadata operations, ensuring compatibility across different audio formats.
+A command-line tool for managing audio file metadata, built in Rust. 
 
 ## Features
 
-- Set cover art for audio files
 - Set album titles for audio files
-- Process individual files or entire directories
-- Automatic backup of original files
-- Support for multiple audio formats (MP3, FLAC, M4A, OGG)
-- Safe operation with automatic rollback on failure
+- Add cover art to audio files
+- Process entire directories of audio files
+- Supports FLAC and MP3 formats
+- Creates backups before modifying files
 
-## Prerequisites
+## Requirements
 
-- Rust (latest stable version)
-- ffmpeg installed on your system
-- metaflac (for FLAC files)
-- id3v2 (for MP3 files)
+- Rust (for building)
+- ffmpeg (for cover art operations)
+- metaflac (for FLAC metadata)
+- id3v2 (for MP3 metadata)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/psschwei/audio-metadata.git
+git clone https://github.com/yourusername/audio-metadata.git
 cd audio-metadata
 ```
 
@@ -31,90 +30,61 @@ cd audio-metadata
 cargo build --release
 ```
 
+3. (Optional) Install the binary to your system:
+```bash
+sudo cp target/release/audio-metadata /usr/local/bin/
+```
+
 ## Usage
 
-The tool can process both individual files and entire directories of audio files.
-
-### Setting Cover Art
-
-#### For a Single File
-```bash
-cargo run -- set -f path/to/audio.mp3 -c path/to/cover.jpg
-```
-
-#### For a Directory of Files
-```bash
-cargo run -- set -f path/to/audio/directory -c path/to/cover.jpg
-```
+The tool provides a `set` command for modifying metadata. You can either modify a single file or process an entire directory.
 
 ### Setting Album Title
 
-#### For a Single File
+For a single file:
 ```bash
-cargo run -- set -f path/to/audio.mp3 -a "Album Name"
+audio-metadata set -f song.mp3 -a "Album Name"
 ```
 
-#### For a Directory of Files
+For a directory:
 ```bash
-cargo run -- set -f path/to/audio/directory -a "Album Name"
+audio-metadata set -f music_directory -a "Album Name"
 ```
 
-### Setting Both Cover Art and Album Title
+### Setting Cover Art
+
+For a single file:
 ```bash
-cargo run -- set -f path/to/audio/directory -c path/to/cover.jpg -a "Album Name"
+audio-metadata set -f song.mp3 -c cover.jpg
 ```
 
-The tool will:
-1. Create a backup of the original file(s)
-2. Add the cover art to the audio file(s) (if specified)
-3. Set the album title (if specified)
-4. Show progress for each file being processed
-5. Display the location of backup files
+For a directory:
+```bash
+audio-metadata set -f music_directory -c cover.jpg
+```
 
-### Command Options
+### Combining Operations
 
-- `-f, --file`: Path to the audio file or directory
-- `-c, --cover`: Path to the cover art image file
-- `-a, --album`: Album title to set
+You can set both album title and cover art in one command:
+```bash
+audio-metadata set -f song.mp3 -a "Album Name" -c cover.jpg
+```
 
-## Backup Files
+### Notes
 
-When processing files, the tool creates backups in a temporary directory:
-- For single files: `/tmp/audio-metadata-{timestamp}/`
-- For directories: All files are backed up in a single `/tmp/audio-metadata-{timestamp}/` directory
+- The tool creates backups of your files before modifying them
+- Backups are stored in `/tmp/audio-metadata-{timestamp}/`
+- You can safely delete the backup directory after verifying the changes
+- If you haven't installed the binary system-wide, you can run it from the build directory:
+  ```bash
+  ./target/release/audio-metadata set -f song.mp3 -a "Album Name"
+  ```
 
-You can safely delete these backup directories after verifying that the metadata changes are correct.
+## Supported Formats
 
-## Error Handling
-
-- If an error occurs during processing, the original file is automatically restored
-- For directory processing, if one file fails, the tool continues with the remaining files
-- Error messages are displayed for any files that couldn't be processed
+- FLAC (using metaflac)
+- MP3 (using id3v2)
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
-## Supported File Formats
-
-The tool uses different tools for different operations:
-- Cover art: ffmpeg (supports all audio formats that ffmpeg can handle)
-- Album title:
-  - FLAC files: metaflac
-  - MP3 files: id3v2
-  - Other formats: Currently not supported for album title setting
-
-Supported audio formats include:
-- MP3
-- FLAC
-- M4A
-- OGG
-- And many more (for cover art operations)
-
-## Notes
-
-- The tool creates a backup of your original file in `/tmp/audio-metadata-{timestamp}/`
-- The backup location is printed to the screen
-- You can safely delete the backup when you're satisfied with the changes
-- The tool uses ffmpeg's ID3v2.3 format for metadata
-- Album title setting is currently supported for MP3 and FLAC files only
+This project is licensed under the MIT License - see the LICENSE file for details.
