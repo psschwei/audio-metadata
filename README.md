@@ -1,10 +1,11 @@
 # Audio Metadata Tool
 
-A command-line tool for managing audio file metadata, supporting both MP3 and FLAC files. This tool uses `ffmpeg` to handle metadata operations, ensuring compatibility across different audio formats.
+A command-line tool for managing audio file metadata, supporting both MP3 and FLAC files. This tool uses `ffmpeg` for cover art operations and `metaflac`/`id3v2` for metadata operations, ensuring compatibility across different audio formats.
 
 ## Features
 
 - Set cover art for audio files
+- Set album titles for audio files
 - Process individual files or entire directories
 - Automatic backup of original files
 - Support for multiple audio formats (MP3, FLAC, M4A, OGG)
@@ -14,6 +15,8 @@ A command-line tool for managing audio file metadata, supporting both MP3 and FL
 
 - Rust (latest stable version)
 - ffmpeg installed on your system
+- metaflac (for FLAC files)
+- id3v2 (for MP3 files)
 
 ## Installation
 
@@ -44,16 +47,35 @@ cargo run -- set -f path/to/audio.mp3 -c path/to/cover.jpg
 cargo run -- set -f path/to/audio/directory -c path/to/cover.jpg
 ```
 
+### Setting Album Title
+
+#### For a Single File
+```bash
+cargo run -- set -f path/to/audio.mp3 -a "Album Name"
+```
+
+#### For a Directory of Files
+```bash
+cargo run -- set -f path/to/audio/directory -a "Album Name"
+```
+
+### Setting Both Cover Art and Album Title
+```bash
+cargo run -- set -f path/to/audio/directory -c path/to/cover.jpg -a "Album Name"
+```
+
 The tool will:
 1. Create a backup of the original file(s)
-2. Add the cover art to the audio file(s)
-3. Show progress for each file being processed
-4. Display the location of backup files
+2. Add the cover art to the audio file(s) (if specified)
+3. Set the album title (if specified)
+4. Show progress for each file being processed
+5. Display the location of backup files
 
 ### Command Options
 
 - `-f, --file`: Path to the audio file or directory
 - `-c, --cover`: Path to the cover art image file
+- `-a, --album`: Album title to set
 
 ## Backup Files
 
@@ -75,12 +97,19 @@ This project is licensed under the Apache License 2.0 - see the LICENSE file for
 
 ## Supported File Formats
 
-The tool uses ffmpeg for metadata operations, so it supports all audio formats that ffmpeg can handle, including:
+The tool uses different tools for different operations:
+- Cover art: ffmpeg (supports all audio formats that ffmpeg can handle)
+- Album title:
+  - FLAC files: metaflac
+  - MP3 files: id3v2
+  - Other formats: Currently not supported for album title setting
+
+Supported audio formats include:
 - MP3
 - FLAC
 - M4A
 - OGG
-- And many more
+- And many more (for cover art operations)
 
 ## Notes
 
@@ -88,3 +117,4 @@ The tool uses ffmpeg for metadata operations, so it supports all audio formats t
 - The backup location is printed to the screen
 - You can safely delete the backup when you're satisfied with the changes
 - The tool uses ffmpeg's ID3v2.3 format for metadata
+- Album title setting is currently supported for MP3 and FLAC files only
