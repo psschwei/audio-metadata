@@ -9,8 +9,8 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cli::{Cli, Commands};
-use crate::file_ops::process_directory;
-use crate::metadata::{set_album_title, set_artist, set_cover_art, set_title};
+use crate::file_ops::{process_directory, process_directory_conversion};
+use crate::metadata::{set_album_title, set_artist, set_cover_art, set_title, convert_flac_to_mp3};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -68,6 +68,50 @@ fn main() -> Result<()> {
                 println!("\nFile has been processed.");
                 println!("Original file is backed up in: {}", temp_dir.display());
                 println!("You can safely delete the backup directory when you're satisfied with the changes.");
+            }
+        }
+        Commands::Convert { file, output, bitrate } => {
+            let input_path = PathBuf::from(file);
+            let output_dir = output.map(PathBuf::from);
+
+            // Create a temp directory for backups
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
+            fs::create_dir(&temp_dir)
+                .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
+
+            if input_path.is_dir() {
+                // Create output directory if specified
+                if let Some(ref dir) = output_dir {
+                    fs::create_dir_all(dir)
+                        .with_context(|| format!("Failed to create output directory: {}", dir.display()))?;
+                }
+
+                process_directory_conversion(&input_path, output_dir.as_ref(), bitrate, &temp_dir)?;
+                
+                println!("\nAll files have been processed.");
+                println!("Original files are backed up in: {}", temp_dir.display());
+                println!("You can safely delete the backup directory when you're satisfied with the conversions.");
+            } else {
+                // Verify it's a FLAC file
+                if let Some(ext) = input_path.extension() {
+                    if ext.to_str().unwrap().to_lowercase() != "flac" {
+                        return Err(anyhow::anyhow!("Input file must be a FLAC file"));
+                    }
+                } else {
+                    return Err(anyhow::anyhow!("Input file must have an extension"));
+                }
+
+                // Create output directory if specified
+                if let Some(ref dir) = output_dir {
+                    fs::create_dir_all(dir)
+                        .with_context(|| format!("Failed to create output directory: {}", dir.display()))?;
+                }
+
+                convert_flac_to_mp3(&input_path, output_dir.as_ref(), bitrate)?;
             }
         }
     }

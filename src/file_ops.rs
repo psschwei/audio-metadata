@@ -74,4 +74,47 @@ pub fn process_directory(
     }
 
     Ok(())
+}
+
+/// Process a directory of FLAC files, converting them to MP3
+pub fn process_directory_conversion(
+    dir_path: &PathBuf,
+    output_dir: Option<&PathBuf>,
+    bitrate: u32,
+    temp_dir: &PathBuf
+) -> Result<()> {
+    let mut error_count = 0;
+    
+    for entry in fs::read_dir(dir_path)
+        .with_context(|| format!("Failed to read directory: {}", dir_path.display()))? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.is_file() {
+            if let Some(ext) = path.extension() {
+                if let Some(ext_str) = ext.to_str() {
+                    if ext_str.to_lowercase() == "flac" {
+                        // Determine output path
+                        let output_path = if let Some(dir) = output_dir {
+                            dir.join(path.file_stem().unwrap()).with_extension("mp3")
+                        } else {
+                            path.with_extension("mp3")
+                        };
+
+                        // Convert the file
+                        if let Err(e) = metadata::convert_to_mp3(&path, &output_path, bitrate, temp_dir) {
+                            eprintln!("Error converting {}: {}", path.display(), e);
+                            error_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if error_count > 0 {
+        println!("\nCompleted with {} errors. Check the messages above for details.", error_count);
+    }
+
+    Ok(())
 } 

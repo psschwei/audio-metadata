@@ -31,4 +31,19 @@ pub enum Commands {
         #[arg(short = 't', long)]
         title: Option<String>,
     },
+
+    /// Convert FLAC files to MP3
+    Convert {
+        /// Path to the FLAC file or directory
+        #[arg(short, long)]
+        file: String,
+
+        /// Output directory (defaults to same directory as input)
+        #[arg(short, long)]
+        output: Option<String>,
+
+        /// MP3 bitrate in kbps (default: 320)
+        #[arg(short, long, default_value = "320")]
+        bitrate: u32,
+    },
 } 

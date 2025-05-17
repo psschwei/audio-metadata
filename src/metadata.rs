@@ -248,4 +248,72 @@ fn set_mp3_title(file_path: &PathBuf, title: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Convert a FLAC file to MP3
+pub fn convert_to_mp3(
+    input_path: &PathBuf,
+    output_path: &PathBuf,
+    bitrate: u32,
+    temp_dir: &PathBuf
+) -> Result<()> {
+    // Backup the original file
+    let backup_path = temp_dir.join(input_path.file_name().unwrap());
+    fs::copy(input_path, &backup_path)
+        .with_context(|| "Failed to copy original file to temp directory")?;
+
+    // Use ffmpeg to convert FLAC to MP3
+    let status = Command::new("ffmpeg")
+        .args([
+            "-y",
+            "-loglevel", "error",
+            "-i", input_path.to_str().unwrap(),
+            "-codec:a", "libmp3lame",
+            "-b:a", &format!("{}k", bitrate),
+            "-map_metadata", "0",
+            output_path.to_str().unwrap(),
+        ])
+        .status()
+        .with_context(|| "Failed to execute ffmpeg command")?;
+
+    if !status.success() {
+        // If conversion failed, restore the original file
+        fs::copy(&backup_path, input_path)
+            .with_context(|| "Failed to restore original file after ffmpeg error")?;
+        return Err(anyhow::anyhow!("ffmpeg command failed"));
+    }
+
+    Ok(())
+}
+
+/// Convert a FLAC file to MP3, preserving metadata
+pub fn convert_flac_to_mp3(
+    input_path: &PathBuf,
+    output_dir: Option<&PathBuf>,
+    bitrate: u32
+) -> Result<()> {
+    // Create a temp directory with timestamp
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
+    fs::create_dir(&temp_dir)
+        .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
+
+    // Determine output path
+    let output_path = if let Some(dir) = output_dir {
+        dir.join(input_path.file_stem().unwrap()).with_extension("mp3")
+    } else {
+        input_path.with_extension("mp3")
+    };
+
+    // Convert the file
+    convert_to_mp3(input_path, &output_path, bitrate, &temp_dir)?;
+
+    println!("Successfully converted {} to {}", input_path.display(), output_path.display());
+    println!("Original file is backed up at: {}", temp_dir.join(input_path.file_name().unwrap()).display());
+    println!("You can safely delete the backup when you're satisfied with the conversion.");
+
+    Ok(())
 } 
