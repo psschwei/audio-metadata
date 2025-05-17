@@ -13,6 +13,7 @@ pub fn process_directory(
     temp_dir: &PathBuf
 ) -> Result<()> {
     let supported_extensions = ["mp3", "flac"];
+    let mut error_count = 0;
     
     for entry in fs::read_dir(dir_path)
         .with_context(|| format!("Failed to read directory: {}", dir_path.display()))? {
@@ -23,18 +24,19 @@ pub fn process_directory(
             if let Some(ext) = path.extension() {
                 if let Some(ext_str) = ext.to_str() {
                     if supported_extensions.contains(&ext_str.to_lowercase().as_str()) {
-                        println!("\nProcessing: {}", path.display());
-                        
                         // Backup the file
                         let backup_path = temp_dir.join(path.file_name().unwrap());
-                        fs::copy(&path, &backup_path)
-                            .with_context(|| "Failed to copy original file to temp directory")?;
-                        println!("Original file backed up to: {}", backup_path.display());
+                        if let Err(e) = fs::copy(&path, &backup_path) {
+                            eprintln!("Error backing up {}: {}", path.display(), e);
+                            error_count += 1;
+                            continue;
+                        }
 
                         // Set cover art if provided
                         if let Some(ref cover) = cover_path {
                             if let Err(e) = metadata::set_cover_art_with_temp(&path, cover, temp_dir) {
                                 eprintln!("Error setting cover art for {}: {}", path.display(), e);
+                                error_count += 1;
                             }
                         }
 
@@ -42,6 +44,7 @@ pub fn process_directory(
                         if let Some(album) = album_title {
                             if let Err(e) = metadata::set_album_title(&path, album) {
                                 eprintln!("Error setting album title for {}: {}", path.display(), e);
+                                error_count += 1;
                             }
                         }
 
@@ -49,6 +52,7 @@ pub fn process_directory(
                         if let Some(artist_name) = artist {
                             if let Err(e) = metadata::set_artist(&path, artist_name) {
                                 eprintln!("Error setting artist for {}: {}", path.display(), e);
+                                error_count += 1;
                             }
                         }
 
@@ -56,12 +60,17 @@ pub fn process_directory(
                         if let Some(song_title) = title {
                             if let Err(e) = metadata::set_title_with_temp(&path, song_title, temp_dir) {
                                 eprintln!("Error setting song title for {}: {}", path.display(), e);
+                                error_count += 1;
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    if error_count > 0 {
+        println!("\nCompleted with {} errors. Check the messages above for details.", error_count);
     }
 
     Ok(())
