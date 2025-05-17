@@ -74,17 +74,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -R artifacts/
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/audio-metadata-linux-x86_64
-            artifacts/audio-metadata-linux-aarch64
-            artifacts/audio-metadata-macos-x86_64
-            artifacts/audio-metadata-macos-aarch64
-            artifacts/audio-metadata-windows-x86_64.exe
+            artifacts/audio-metadata-linux-x86_64/audio-metadata-linux-x86_64
+            artifacts/audio-metadata-linux-aarch64/audio-metadata-linux-aarch64
+            artifacts/audio-metadata-macos-x86_64/audio-metadata-macos-x86_64
+            artifacts/audio-metadata-macos-aarch64/audio-metadata-macos-aarch64
+            artifacts/audio-metadata-windows-x86_64.exe/audio-metadata-windows-x86_64.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
