@@ -104,25 +104,6 @@ fn set_mp3_album_title(file_path: &PathBuf, album_title: &str) -> Result<()> {
     Ok(())
 }
 
-/// Set the cover art for an audio file
-pub fn set_cover_art(audio_path: &PathBuf, cover_path: &PathBuf) -> Result<()> {
-    // Create a temp directory with timestamp
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
-    fs::create_dir(&temp_dir)
-        .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
-
-    set_cover_art_with_temp(audio_path, cover_path, &temp_dir)?;
-
-    println!("Original file is backed up at: {}", temp_dir.join(audio_path.file_name().unwrap()).display());
-    println!("You can safely delete the backup when you're satisfied with the changes.");
-
-    Ok(())
-}
-
 /// Set the cover art for an audio file using a temporary directory
 pub fn set_cover_art_with_temp(audio_path: &PathBuf, cover_path: &PathBuf, temp_dir: &PathBuf) -> Result<()> {
     // Copy original file to temp directory
@@ -159,25 +140,6 @@ pub fn set_cover_art_with_temp(audio_path: &PathBuf, cover_path: &PathBuf, temp_
     }
 
     println!("Successfully updated cover art for {}", audio_path.display());
-
-    Ok(())
-}
-
-/// Set the song title metadata for an audio file
-pub fn set_title(file_path: &PathBuf, title: &str) -> Result<()> {
-    // Create a temp directory with timestamp
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
-    fs::create_dir(&temp_dir)
-        .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
-
-    set_title_with_temp(file_path, title, &temp_dir)?;
-
-    println!("Original file is backed up at: {}", temp_dir.join(file_path.file_name().unwrap()).display());
-    println!("You can safely delete the backup when you're satisfied with the changes.");
 
     Ok(())
 }

@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cli::{Cli, Commands};
 use crate::file_ops::{process_directory, process_directory_conversion};
-use crate::metadata::{set_album_title, set_artist, set_cover_art, set_title, convert_flac_to_mp3};
+use crate::metadata::{convert_flac_to_mp3};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -53,16 +53,16 @@ fn main() -> Result<()> {
 
                 // Process each metadata operation
                 if let Some(cover_path) = cover {
-                    set_cover_art(&path, &PathBuf::from(cover_path))?;
+                    metadata::set_cover_art_with_temp(&path, &PathBuf::from(cover_path), &temp_dir)?;
                 }
                 if let Some(album_title) = album {
-                    set_album_title(&path, &album_title)?;
+                    metadata::set_album_title(&path, &album_title)?;
                 }
                 if let Some(artist_name) = artist {
-                    set_artist(&path, &artist_name)?;
+                    metadata::set_artist(&path, &artist_name)?;
                 }
                 if let Some(song_title) = title {
-                    set_title(&path, &song_title)?;
+                    metadata::set_title_with_temp(&path, &song_title, &temp_dir)?;
                 }
 
                 println!("\nFile has been processed.");
