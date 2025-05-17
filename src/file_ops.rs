@@ -3,12 +3,13 @@ use std::path::PathBuf;
 use std::fs;
 use crate::metadata;
 
-/// Process a directory of audio files, setting cover art, album title, and/or artist
+/// Process a directory of audio files, setting cover art, album title, artist, and/or song title
 pub fn process_directory(
     dir_path: &PathBuf,
     cover_path: Option<PathBuf>,
     album_title: Option<&str>,
     artist: Option<&str>,
+    title: Option<&str>,
     temp_dir: &PathBuf
 ) -> Result<()> {
     let supported_extensions = ["mp3", "flac"];
@@ -48,6 +49,13 @@ pub fn process_directory(
                         if let Some(artist_name) = artist {
                             if let Err(e) = metadata::set_artist(&path, artist_name) {
                                 eprintln!("Error setting artist for {}: {}", path.display(), e);
+                            }
+                        }
+
+                        // Set song title if provided
+                        if let Some(song_title) = title {
+                            if let Err(e) = metadata::set_title_with_temp(&path, song_title, temp_dir) {
+                                eprintln!("Error setting song title for {}: {}", path.display(), e);
                             }
                         }
                     }

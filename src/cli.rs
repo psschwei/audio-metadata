@@ -26,5 +26,9 @@ pub enum Commands {
         /// Artist name to set
         #[arg(short = 'r', long)]
         artist: Option<String>,
+
+        /// Song title to set
+        #[arg(short = 't', long)]
+        title: Option<String>,
     },
 } 

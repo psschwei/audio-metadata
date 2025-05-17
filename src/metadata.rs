@@ -163,4 +163,89 @@ pub fn set_cover_art_with_temp(audio_path: &PathBuf, cover_path: &PathBuf, temp_
     Ok(())
 }
 
-// ... existing code for cover art and album title ... 
+/// Set the song title metadata for an audio file
+pub fn set_title(file_path: &PathBuf, title: &str) -> Result<()> {
+    // Create a temp directory with timestamp
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
+    fs::create_dir(&temp_dir)
+        .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
+
+    set_title_with_temp(file_path, title, &temp_dir)?;
+
+    println!("Original file is backed up at: {}", temp_dir.join(file_path.file_name().unwrap()).display());
+    println!("You can safely delete the backup when you're satisfied with the changes.");
+
+    Ok(())
+}
+
+/// Set the song title metadata for an audio file using a temporary directory
+pub fn set_title_with_temp(file_path: &PathBuf, title: &str, temp_dir: &PathBuf) -> Result<()> {
+    // Copy original file to temp directory
+    let backup_path = temp_dir.join(file_path.file_name().unwrap());
+    fs::copy(file_path, &backup_path)
+        .with_context(|| "Failed to copy original file to temp directory")?;
+    
+    println!("Original file backed up to: {}", backup_path.display());
+
+    let extension = file_path.extension()
+        .and_then(|ext| ext.to_str())
+        .ok_or_else(|| anyhow::anyhow!("File has no extension"))?;
+
+    let result = match extension.to_lowercase().as_str() {
+        "flac" => set_flac_title(file_path, title),
+        "mp3" => set_mp3_title(file_path, title),
+        _ => Err(anyhow::anyhow!("Unsupported file format: {}", extension)),
+    };
+
+    if let Err(e) = result {
+        // If setting title failed, restore the original file
+        fs::copy(&backup_path, file_path)
+            .with_context(|| "Failed to restore original file after error")?;
+        return Err(e);
+    }
+
+    println!("Successfully updated song title for {}", file_path.display());
+
+    Ok(())
+}
+
+fn set_flac_title(file_path: &PathBuf, title: &str) -> Result<()> {
+    // First remove any existing TITLE tag
+    let status = Command::new("metaflac")
+        .args(["--remove-tag", "TITLE", file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute metaflac command to remove existing tag")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("metaflac command failed while removing existing tag"));
+    }
+
+    // Then set the new TITLE tag
+    let status = Command::new("metaflac")
+        .args(["--set-tag", &format!("TITLE={}", title), file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute metaflac command to set new tag")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("metaflac command failed while setting new tag"));
+    }
+
+    Ok(())
+}
+
+fn set_mp3_title(file_path: &PathBuf, title: &str) -> Result<()> {
+    let status = Command::new("id3v2")
+        .args(["--song", title, file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute id3v2 command")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("id3v2 command failed"));
+    }
+
+    Ok(())
+} 

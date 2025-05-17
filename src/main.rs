@@ -10,13 +10,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cli::{Cli, Commands};
 use crate::file_ops::process_directory;
-use crate::metadata::{set_album_title, set_artist, set_cover_art};
+use crate::metadata::{set_album_title, set_artist, set_cover_art, set_title};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Set { file, cover, album, artist } => {
+        Commands::Set { file, cover, album, artist, title } => {
             let path = PathBuf::from(file);
             
             if path.is_dir() {
@@ -34,6 +34,7 @@ fn main() -> Result<()> {
                     cover.as_ref().map(PathBuf::from),
                     album.as_deref(),
                     artist.as_deref(),
+                    title.as_deref(),
                     &temp_dir
                 )?;
                 
@@ -41,6 +42,16 @@ fn main() -> Result<()> {
                 println!("Original files are backed up in: {}", temp_dir.display());
                 println!("You can safely delete the backup directory when you're satisfied with the changes.");
             } else {
+                // Create a temp directory for the single file
+                let timestamp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                let temp_dir = PathBuf::from(format!("/tmp/audio-metadata-{}", timestamp));
+                fs::create_dir(&temp_dir)
+                    .with_context(|| format!("Failed to create temp directory: {}", temp_dir.display()))?;
+
+                // Process each metadata operation
                 if let Some(cover_path) = cover {
                     set_cover_art(&path, &PathBuf::from(cover_path))?;
                 }
@@ -50,6 +61,13 @@ fn main() -> Result<()> {
                 if let Some(artist_name) = artist {
                     set_artist(&path, &artist_name)?;
                 }
+                if let Some(song_title) = title {
+                    set_title(&path, &song_title)?;
+                }
+
+                println!("\nFile has been processed.");
+                println!("Original file is backed up in: {}", temp_dir.display());
+                println!("You can safely delete the backup directory when you're satisfied with the changes.");
             }
         }
     }
