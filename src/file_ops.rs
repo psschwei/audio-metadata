@@ -1,0 +1,60 @@
+use anyhow::{Result, Context};
+use std::path::PathBuf;
+use std::fs;
+use crate::metadata;
+
+/// Process a directory of audio files, setting cover art, album title, and/or artist
+pub fn process_directory(
+    dir_path: &PathBuf,
+    cover_path: Option<PathBuf>,
+    album_title: Option<&str>,
+    artist: Option<&str>,
+    temp_dir: &PathBuf
+) -> Result<()> {
+    let supported_extensions = ["mp3", "flac"];
+    
+    for entry in fs::read_dir(dir_path)
+        .with_context(|| format!("Failed to read directory: {}", dir_path.display()))? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.is_file() {
+            if let Some(ext) = path.extension() {
+                if let Some(ext_str) = ext.to_str() {
+                    if supported_extensions.contains(&ext_str.to_lowercase().as_str()) {
+                        println!("\nProcessing: {}", path.display());
+                        
+                        // Backup the file
+                        let backup_path = temp_dir.join(path.file_name().unwrap());
+                        fs::copy(&path, &backup_path)
+                            .with_context(|| "Failed to copy original file to temp directory")?;
+                        println!("Original file backed up to: {}", backup_path.display());
+
+                        // Set cover art if provided
+                        if let Some(ref cover) = cover_path {
+                            if let Err(e) = metadata::set_cover_art_with_temp(&path, cover, temp_dir) {
+                                eprintln!("Error setting cover art for {}: {}", path.display(), e);
+                            }
+                        }
+
+                        // Set album title if provided
+                        if let Some(album) = album_title {
+                            if let Err(e) = metadata::set_album_title(&path, album) {
+                                eprintln!("Error setting album title for {}: {}", path.display(), e);
+                            }
+                        }
+
+                        // Set artist if provided
+                        if let Some(artist_name) = artist {
+                            if let Err(e) = metadata::set_artist(&path, artist_name) {
+                                eprintln!("Error setting artist for {}: {}", path.display(), e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+} 

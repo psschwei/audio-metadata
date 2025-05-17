@@ -5,6 +5,7 @@ A command-line tool for managing audio file metadata, built in Rust.
 ## Features
 
 - Set album titles for audio files
+- Set artist names for audio files
 - Add cover art to audio files
 - Process entire directories of audio files
 - Supports FLAC and MP3 formats
@@ -51,6 +52,18 @@ For a directory:
 audio-metadata set -f music_directory -a "Album Name"
 ```
 
+### Setting Artist Name
+
+For a single file:
+```bash
+audio-metadata set -f song.mp3 -r "Artist Name"
+```
+
+For a directory:
+```bash
+audio-metadata set -f music_directory -r "Artist Name"
+```
+
 ### Setting Cover Art
 
 For a single file:
@@ -65,9 +78,9 @@ audio-metadata set -f music_directory -c cover.jpg
 
 ### Combining Operations
 
-You can set both album title and cover art in one command:
+You can set multiple metadata fields in one command:
 ```bash
-audio-metadata set -f song.mp3 -a "Album Name" -c cover.jpg
+audio-metadata set -f song.mp3 -a "Album Name" -r "Artist Name" -c cover.jpg
 ```
 
 ### Notes
