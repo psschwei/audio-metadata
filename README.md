@@ -1,111 +1,104 @@
 # Audio Metadata Tool
 
-A command-line tool for managing audio file metadata, built in Rust. 
+A command-line tool for managing audio file metadata and converting FLAC files to MP3.
 
 ## Features
 
-- Set album titles for audio files
-- Set artist names for audio files
-- Set song titles for audio files
+- Set metadata (artist, album, title) for MP3 and FLAC files
 - Add cover art to audio files
-- Process entire directories of audio files
-- Supports FLAC and MP3 formats
-- Creates backups before modifying files
-
-## Requirements
-
-- Rust (for building)
-- ffmpeg (for cover art operations)
-- metaflac (for FLAC metadata)
-- id3v2 (for MP3 metadata)
+- Convert FLAC files to MP3 with metadata preservation
+- Process single files or entire directories
+- Automatic backup of original files
+- Supports x86_64 and ARM64 architectures on Linux and macOS
 
 ## Installation
 
-1. Clone the repository:
+### From Release
+
+Download the latest release for your platform from the [Releases page](https://github.com/yourusername/audio-metadata/releases). The following binaries are available:
+
+- Linux (x86_64): `audio-metadata-linux-x86_64`
+- Linux (ARM64): `audio-metadata-linux-aarch64`
+- macOS (x86_64): `audio-metadata-macos-x86_64`
+- macOS (ARM64): `audio-metadata-macos-aarch64`
+- Windows (x86_64): `audio-metadata-windows-x86_64.exe`
+
+### Dependencies
+
+The tool requires the following dependencies to be installed:
+
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt-get install ffmpeg id3v2 flac
+```
+
+#### macOS
+```bash
+brew install ffmpeg id3v2 flac
+```
+
+#### Windows
+- Download and install [ffmpeg](https://ffmpeg.org/download.html)
+- Download and install [id3v2](https://id3v2.sourceforge.net/)
+- Download and install [flac](https://xiph.org/flac/download.html)
+
+Make sure these tools are available in your system's PATH.
+
+### From Source
+
 ```bash
 git clone https://github.com/yourusername/audio-metadata.git
 cd audio-metadata
-```
-
-2. Build the project:
-```bash
-cargo build --release
-```
-
-3. (Optional) Install the binary to your system:
-```bash
-sudo cp target/release/audio-metadata /usr/local/bin/
+cargo install --path .
 ```
 
 ## Usage
 
-The tool provides a `set` command for modifying metadata. You can either modify a single file or process an entire directory.
+### Setting Metadata
 
-### Setting Album Title
-
-For a single file:
 ```bash
-audio-metadata set -f song.mp3 -a "Album Name"
-```
+# Set metadata for a single file
+audio-metadata set -f song.mp3 -r "Artist Name" -a "Album Title" -t "Song Title"
 
-For a directory:
-```bash
-audio-metadata set -f music_directory -a "Album Name"
-```
+# Set metadata for all files in a directory
+audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title"
 
-### Setting Artist Name
-
-For a single file:
-```bash
-audio-metadata set -f song.mp3 -r "Artist Name"
-```
-
-For a directory:
-```bash
-audio-metadata set -f music_directory -r "Artist Name"
-```
-
-### Setting Song Title
-
-For a single file:
-```bash
-audio-metadata set -f song.mp3 -t "Song Title"
-```
-
-### Setting Cover Art
-
-For a single file:
-```bash
+# Add cover art
 audio-metadata set -f song.mp3 -c cover.jpg
 ```
 
-For a directory:
+### Converting FLAC to MP3
+
 ```bash
-audio-metadata set -f music_directory -c cover.jpg
+# Convert a single FLAC file to MP3
+audio-metadata convert -f song.flac
+
+# Convert with custom bitrate
+audio-metadata convert -f song.flac -b 256
+
+# Convert all FLAC files in a directory
+audio-metadata convert -f /path/to/flac/dir
+
+# Convert to a different directory
+audio-metadata convert -f /path/to/flac/dir -o /path/to/output/dir
 ```
 
-### Combining Operations
+## Development
 
-You can set multiple metadata fields in one command:
+### Building from Source
+
 ```bash
-audio-metadata set -f song.mp3 -a "Album Name" -r "Artist Name" -t "Song Title" -c cover.jpg
+git clone https://github.com/yourusername/audio-metadata.git
+cd audio-metadata
+cargo build --release
 ```
 
-### Notes
+### Running Tests
 
-- The tool creates backups of your files before modifying them
-- Backups are stored in `/tmp/audio-metadata-{timestamp}/`
-- You can safely delete the backup directory after verifying the changes
-- If you haven't installed the binary system-wide, you can run it from the build directory:
-  ```bash
-  ./target/release/audio-metadata set -f song.mp3 -a "Album Name"
-  ```
-
-## Supported Formats
-
-- FLAC (using metaflac)
-- MP3 (using id3v2)
+```bash
+cargo test
+```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
