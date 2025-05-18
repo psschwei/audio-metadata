@@ -4,6 +4,22 @@ on:
   push:
     tags:
       - 'v*' # Trigger on version tags
+  workflow_dispatch: # Allow manual triggering
+    inputs:
+      version:
+        description: 'Version to release (e.g. v1.0.0)'
+        required: true
+        type: string
+      create_tag:
+        description: 'Create a new tag for this version'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark this release as a pre-release'
+        required: false
+        type: boolean
+        default: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -38,6 +54,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create tag if requested
+        if: github.event_name == 'workflow_dispatch' && inputs.create_tag
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag ${{ inputs.version }}
+          git push origin ${{ inputs.version }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -81,14 +105,11 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/audio-metadata-linux-x86_64
-            artifacts/audio-metadata-linux-aarch64
-            artifacts/audio-metadata-macos-x86_64
-            artifacts/audio-metadata-macos-aarch64
-            artifacts/audio-metadata-windows-x86_64.exe
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          files: artifacts/audio-metadata-linux*
           generate_release_notes: true
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
