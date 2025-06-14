@@ -10,6 +10,7 @@ pub fn process_directory(
     album_title: Option<&str>,
     artist: Option<&str>,
     title: Option<&str>,
+    infer_track: bool,
     temp_dir: &PathBuf
 ) -> Result<()> {
     let supported_extensions = ["mp3", "flac"];
@@ -61,6 +62,24 @@ pub fn process_directory(
                             if let Err(e) = metadata::set_title_with_temp(&path, song_title, temp_dir) {
                                 eprintln!("Error setting song title for {}: {}", path.display(), e);
                                 error_count += 1;
+                            }
+                        }
+
+                        // Infer and set track name from filename if requested
+                        if infer_track {
+                            match metadata::infer_track_name_from_filename(&path) {
+                                Ok(inferred_title) => {
+                                    if let Err(e) = metadata::set_title_with_temp(&path, &inferred_title, temp_dir) {
+                                        eprintln!("Error setting inferred track name for {}: {}", path.display(), e);
+                                        error_count += 1;
+                                    } else {
+                                        println!("Set track name to '{}' for {}", inferred_title, path.display());
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("Error inferring track name for {}: {}", path.display(), e);
+                                    error_count += 1;
+                                }
                             }
                         }
                     }

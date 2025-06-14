@@ -30,6 +30,10 @@ pub enum Commands {
         /// Song title to set
         #[arg(short = 't', long)]
         title: Option<String>,
+
+        /// Infer track name from filename (removes track numbers and file extension)
+        #[arg(long)]
+        infer_track: bool,
     },
 
     /// Convert FLAC files to MP3

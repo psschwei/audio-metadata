@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
+use regex;
 
 /// Set the artist metadata for an audio file
 pub fn set_artist(file_path: &PathBuf, artist: &str) -> Result<()> {
@@ -278,4 +279,68 @@ pub fn convert_flac_to_mp3(
     println!("You can safely delete the backup when you're satisfied with the conversion.");
 
     Ok(())
+}
+
+/// Infer track name from filename by removing track numbers and file extension
+pub fn infer_track_name_from_filename(file_path: &PathBuf) -> Result<String> {
+    let filename = file_path.file_stem()
+        .and_then(|stem| stem.to_str())
+        .ok_or_else(|| anyhow::anyhow!("Could not get filename"))?;
+
+    // Common patterns for track numbers at the beginning of filenames
+    let patterns = [
+        // "01 - Song Name" or "1 - Song Name"
+        regex::Regex::new(r"^\d+\s*[-–—]\s*").unwrap(),
+        // "01. Song Name" or "1. Song Name"
+        regex::Regex::new(r"^\d+\.\s*").unwrap(),
+        // "01_Song Name" or "1_Song Name"
+        regex::Regex::new(r"^\d+_\s*").unwrap(),
+        // "01 Song Name" (just space)
+        regex::Regex::new(r"^\d+\s+").unwrap(),
+    ];
+
+    let mut track_name = filename.to_string();
+    
+    for pattern in &patterns {
+        track_name = pattern.replace(&track_name, "").to_string();
+    }
+
+    track_name = track_name.trim().to_string();
+
+    if track_name.is_empty() {
+        return Err(anyhow::anyhow!("Could not extract track name from filename: {}", filename));
+    }
+
+    Ok(track_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_infer_track_name_from_filename() {
+        let test_cases = [
+            ("03 - This Song.mp3", "This Song"),
+            ("1 - Another Song.flac", "Another Song"),
+            ("01. Third Song.mp3", "Third Song"),
+            ("5. Fourth Song.flac", "Fourth Song"),
+            ("01_Fifth Song.mp3", "Fifth Song"),
+            ("10 Sixth Song.flac", "Sixth Song"),
+            ("Song Without Number.mp3", "Song Without Number"),
+            ("12 - Song With Numbers 123.mp3", "Song With Numbers 123"),
+        ];
+
+        for (filename, expected) in &test_cases {
+            let path = PathBuf::from(filename);
+            match infer_track_name_from_filename(&path) {
+                Ok(track_name) => {
+                    assert_eq!(&track_name, expected, "Failed for filename: {}", filename);
+                }
+                Err(e) => {
+                    panic!("Error for filename '{}': {}", filename, e);
+                }
+            }
+        }
+    }
 } 

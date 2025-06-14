@@ -5,6 +5,7 @@ A command-line tool for managing audio file metadata and converting FLAC files t
 ## Features
 
 - Set metadata (artist, album, title) for MP3 and FLAC files
+- Infer track names from filenames (automatically removes track numbers and file extensions)
 - Add cover art to audio files
 - Convert FLAC files to MP3 with metadata preservation
 - Process single files or entire directories
@@ -65,7 +66,22 @@ audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title"
 
 # Add cover art
 audio-metadata set -f song.mp3 -c cover.jpg
+
+# Infer track names from filenames (removes track numbers and file extensions)
+audio-metadata set -f /path/to/music/dir --infer-track
+
+# Combine inferring track names with other metadata
+audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title" --infer-track
 ```
+
+**Track Name Inference Examples:**
+- `03 - This Song.mp3` → `This Song`
+- `1 - Another Song.flac` → `Another Song`
+- `01. Third Song.mp3` → `Third Song`
+- `5. Fourth Song.flac` → `Fourth Song`
+- `01_Fifth Song.mp3` → `Fifth Song`
+- `10 Sixth Song.flac` → `Sixth Song`
+- `Song Without Number.mp3` → `Song Without Number`
 
 ### Converting FLAC to MP3
 

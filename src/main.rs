@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Set { file, cover, album, artist, title } => {
+        Commands::Set { file, cover, album, artist, title, infer_track } => {
             let path = PathBuf::from(file);
             
             if path.is_dir() {
@@ -35,6 +35,7 @@ fn main() -> Result<()> {
                     album.as_deref(),
                     artist.as_deref(),
                     title.as_deref(),
+                    infer_track,
                     &temp_dir
                 )?;
                 
@@ -63,6 +64,10 @@ fn main() -> Result<()> {
                 }
                 if let Some(song_title) = title {
                     metadata::set_title_with_temp(&path, &song_title, &temp_dir)?;
+                }
+                if infer_track {
+                    let inferred_title = metadata::infer_track_name_from_filename(&path)?;
+                    metadata::set_title_with_temp(&path, &inferred_title, &temp_dir)?;
                 }
 
                 println!("\nFile has been processed.");
