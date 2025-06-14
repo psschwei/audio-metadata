@@ -31,9 +31,17 @@ pub enum Commands {
         #[arg(short = 't', long)]
         title: Option<String>,
 
+        /// Track number to set
+        #[arg(short = 'n', long)]
+        track: Option<u32>,
+
         /// Infer track name from filename (removes track numbers and file extension)
         #[arg(long)]
         infer_track: bool,
+
+        /// Infer track numbers based on sorted order of files in directory
+        #[arg(long)]
+        infer_order: bool,
     },
 
     /// Convert FLAC files to MP3

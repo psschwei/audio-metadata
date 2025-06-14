@@ -4,8 +4,10 @@ A command-line tool for managing audio file metadata and converting FLAC files t
 
 ## Features
 
-- Set metadata (artist, album, title) for MP3 and FLAC files
+- Set metadata (artist, album, title, track number) for MP3 and FLAC files
 - Infer track names from filenames (automatically removes track numbers and file extensions)
+- Infer track numbers based on sorted order of files in a directory
+- Manually set track numbers for files or directories
 - Add cover art to audio files
 - Convert FLAC files to MP3 with metadata preservation
 - Process single files or entire directories
@@ -67,11 +69,26 @@ audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title"
 # Add cover art
 audio-metadata set -f song.mp3 -c cover.jpg
 
+# Set track number for a single file
+audio-metadata set -f song.mp3 -n 5
+
+# Set track number for all files in a directory (all will be set to the same number)
+audio-metadata set -f /path/to/music/dir -n 3
+
 # Infer track names from filenames (removes track numbers and file extensions)
 audio-metadata set -f /path/to/music/dir --infer-track
 
+# Infer track numbers based on sorted order of files in directory
+audio-metadata set -f /path/to/music/dir --infer-order
+
 # Combine inferring track names with other metadata
 audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title" --infer-track
+
+# Combine inferring track numbers with other metadata
+audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title" --infer-order
+
+# Combine manual track number with other metadata
+audio-metadata set -f song.mp3 -n 2 -r "Artist" -a "Album"
 ```
 
 **Track Name Inference Examples:**
@@ -82,6 +99,19 @@ audio-metadata set -f /path/to/music/dir -r "Artist Name" -a "Album Title" --inf
 - `01_Fifth Song.mp3` → `Fifth Song`
 - `10 Sixth Song.flac` → `Sixth Song`
 - `Song Without Number.mp3` → `Song Without Number`
+
+**Track Number Inference Examples:**
+When using `--infer-order` on a directory containing:
+- `03 - Song 1.mp3` → Track 1
+- `04 - Song 2.mp3` → Track 2
+- `01 - Song 3.flac` → Track 3
+- `02 - Song 4.flac` → Track 4
+
+The files are sorted alphabetically by filename, and track numbers are assigned sequentially starting from 1.
+
+**Manual Track Number:**
+- Using `-n`/`--track` sets the track number for a single file or all files in a directory (all will get the same number).
+- If both `--infer-order` and `-n` are used, `--infer-order` takes precedence and assigns sequential track numbers.
 
 ### Converting FLAC to MP3
 

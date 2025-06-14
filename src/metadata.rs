@@ -213,6 +213,56 @@ fn set_mp3_title(file_path: &PathBuf, title: &str) -> Result<()> {
     Ok(())
 }
 
+/// Set the track number metadata for an audio file
+pub fn set_track_number(file_path: &PathBuf, track_number: u32) -> Result<()> {
+    let extension = file_path.extension()
+        .and_then(|ext| ext.to_str())
+        .ok_or_else(|| anyhow::anyhow!("File has no extension"))?;
+
+    match extension.to_lowercase().as_str() {
+        "flac" => set_flac_track_number(file_path, track_number),
+        "mp3" => set_mp3_track_number(file_path, track_number),
+        _ => Err(anyhow::anyhow!("Unsupported file format: {}", extension)),
+    }
+}
+
+fn set_flac_track_number(file_path: &PathBuf, track_number: u32) -> Result<()> {
+    // First remove any existing TRACKNUMBER tag
+    let status = Command::new("metaflac")
+        .args(["--remove-tag", "TRACKNUMBER", file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute metaflac command to remove existing tag")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("metaflac command failed while removing existing tag"));
+    }
+
+    // Then set the new TRACKNUMBER tag
+    let status = Command::new("metaflac")
+        .args(["--set-tag", &format!("TRACKNUMBER={}", track_number), file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute metaflac command to set new tag")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("metaflac command failed while setting new tag"));
+    }
+
+    Ok(())
+}
+
+fn set_mp3_track_number(file_path: &PathBuf, track_number: u32) -> Result<()> {
+    let status = Command::new("id3v2")
+        .args(["--track", &track_number.to_string(), file_path.to_str().unwrap()])
+        .status()
+        .with_context(|| "Failed to execute id3v2 command")?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("id3v2 command failed"));
+    }
+
+    Ok(())
+}
+
 /// Convert a FLAC file to MP3
 pub fn convert_to_mp3(
     input_path: &PathBuf,
